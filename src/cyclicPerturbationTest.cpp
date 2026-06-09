@@ -1,0 +1,141 @@
+#include "ising.hpp"
+#include "nlohmann/json.hpp"
+#include <random>
+#include <unsupported/Eigen/MatrixFunctions>
+
+using json = nlohmann::json;
+
+int main(int argc, char *argv[])
+{
+    double hbar = 1.0;
+    int N = 5;
+    double J = 1.0;
+    double hx = 1.0;
+    double hz = 1.0;
+    double Tmax = 1.0;
+    double lambda = 0.1;
+    double dt = 0.1;
+    int seed = 1;
+    double beta = 1.0;
+    int averages = 1;
+    int krylovDim = 20;
+
+    if (argc != 3)
+    {
+        throw std::invalid_argument("usage: ./_cyclicPerturbationFast.out <maxTime> <lambda>");
+    }
+
+    std::ifstream dataFile("_params.json");
+    json params = json::parse(dataFile);
+
+    hbar = params["hbar"];
+    N = params["N"];
+    J = params["J"];
+    hx = params["hx"];
+    hz = params["hz"];
+    dt = params["dt"];
+    seed = params["seed"];
+    beta = params["beta"];
+    averages = params["averages"];
+    std::string saveFolder = params["saveFolder"];
+    krylovDim = params["krylovDim"];
+
+    double dbeta = dt;
+    int Betaiters = static_cast<int>(std::round(beta / (dbeta * 2.0)));
+    if (Betaiters <= 0) Betaiters = 1;
+    dbeta = beta / (Betaiters * 2.0);
+
+    Tmax = std::stof(argv[1]);
+    lambda = std::stof(argv[2]);
+    double mu = 2.0 * pi / Tmax;
+
+    if (N < 0)
+    {
+        throw std::invalid_argument("N must be non-negative");
+    }
+    if (hbar <= 0.0)
+    {
+        throw std::invalid_argument("hbar must be positive");
+    }
+    if (Tmax <= 0.0 || dt <= 0.0)
+    {
+        throw std::invalid_argument("T and dt must be positive");
+    }
+
+    int iters = static_cast<int>(std::round(Tmax / dt));
+    if (iters <= 0) iters = 1;
+    dt = Tmax / iters;
+
+    int dim = 1 << N;
+    std::cout << "Hilbert space dimension: " << dim << std::endl;
+
+    VectorReal Ei(averages);
+    VectorReal Ef(averages);
+    VectorReal Weights(averages);
+
+    std::string fileName = saveFolder + "isingFast_N" + std::to_string(N) + "_lambda" + std::to_string(lambda) + "_T" + std::to_string(Tmax) + "_B" + std::to_string(beta) + ".csv";
+
+    MatrixReal H(dim, dim);
+    MatrixReal V(dim, dim);
+    buildHamiltonian(H, N, J, hx, hz);
+    buildPerturbation(V, N);
+
+    Matrix U = Matrix::Identity(dim, dim);
+    for (int step = 0; step < iters; step++)
+    {
+        
+        UpdateUnitary(H, V, U, hbar, lambda, mu, step * dt, dt);
+        
+    }
+
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(static)
+    #endif
+    for(int average = 0; average < averages; average++)
+    {
+        std::mt19937 generator(seed + average);
+        std::uniform_real_distribution<double> phaseDist(0.0, 2.0 * pi);
+
+        Vector state(dim);
+
+        const double amp = 1.0 / std::sqrt(static_cast<double>(dim));
+
+        for (int s = 0; s < dim; s++)
+        {
+            double theta = phaseDist(generator);
+            state(s) = amp * std::exp(std::complex<double>(0.0, theta));
+        }
+
+        for(int Betaiter = 0; Betaiter < Betaiters; Betaiter++)
+        {
+            evolveKrylovImaginary(state, N, J, hz, hx, dbeta, krylovDim);
+        }
+
+        Weights(average) = std::real(state.dot(state));
+        Ei(average) = (expectationHz(state, N, J, hz) + expectationHx(state, N, hx));
+
+        state = U * state;
+
+        Ef(average) = (expectationHz(state, N, J, hz) + expectationHx(state, N, hx)) / std::real(state.dot(state)) * Weights(average);
+    }
+
+    std::cout << "Work: "<< (Ef-Ei).sum()/Weights.sum() << std::endl;
+    std::cout << "ED Work: "<< std::real(((-beta * H).exp() * (U.adjoint() * H * U - H)).trace())/std::real(((-beta * H).exp()).trace()) << std::endl;
+
+    std::ofstream file;
+    file.open(fileName);
+    if (!file)
+    {
+        throw std::runtime_error("could not open output file: " + fileName);
+    }
+    file << std::setprecision(15);
+
+    file << "Ei,Ef,deltaE,weight";
+    for (int i = 0; i < averages; i++)
+    {
+        file << "\n" << Ei(i) << "," << Ef(i) << "," << Ef(i) - Ei(i) << "," << Weights(i);
+    }
+
+    file.close();
+    
+}
