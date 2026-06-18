@@ -1,6 +1,10 @@
-# ising
+# One-Dimensional Mixed-Field Ising Model
 
-Research code for exact diagonalization and Krylov/time-evolution studies of the transverse-field Ising model.
+This repository contains C++ and Python code for analysis of a mixed-field Ising model. We consider the Hamiltonian
+
+$$H = J \sum_{i=1}^N \sigma^z_i \sigma^z_{i+1} + h_x \sum_{i=1}^N \sigma^x_i + h_z \sum_{i=1}^N \sigma^z_i,$$
+
+with periodic boundary conditions. In the absence of the longitudinal field ($h_z=0$), this model reduces to the transverse-field Ising chain, which is integrable. A longitudinal field generically breaks integrability, and the resulting mixed-field Ising model exhibits chaotic behavior.
 
 ## Repository Layout
 
