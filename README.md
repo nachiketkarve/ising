@@ -25,6 +25,12 @@ $$\lambda(t) = \begin{cases}
 
 These measurements are performed by the `cyclicPerturbation` applications.
 
+## Spectral Function
+
+The scaling of the speed-Fisher information with the protocol time is tied to the low-frequency spectral weight of the perturbation. To verify this, the `spectralFnED.py` and `spectralFnEDTFIM.py` applications compute the spectral function of the perturbation, which is the Fourier transform of the correlation function
+
+$$C(t) = {\langle V(t)V(0) \rangle}_c.$$
+
 ## Repository Layout
 
 - `src/`: C++ simulation drivers and shared Ising routines.
@@ -40,8 +46,13 @@ These measurements are performed by the `cyclicPerturbation` applications.
 C++:
 
 - A C++17 compiler with OpenMP support.
-- Eigen headers at `../Libraries/eigen` relative to this repo.
-- nlohmann/json headers at `../Libraries/json/include` relative to this repo.
+
+This project uses the following third-party libraries:
+
+- [Eigen](https://gitlab.com/libeigen/eigen) — linear algebra library
+- [nlohmann/json](https://github.com/nlohmann/json) — JSON serialization library
+
+These dependencies are expected under `../Libraries`.
 
 Python:
 
