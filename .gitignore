@@ -1,0 +1,23 @@
+# Build products
+build/
+lib/
+*.o
+*.out
+*.exe
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local/editor state
+.vscode/
+
+# Generated research outputs
+data/**/*.csv
+figures/
+results/
+
+# Keep the local parameter file trackable for now; use configs/ for templates.
+!_params.json

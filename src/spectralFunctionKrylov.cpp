@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
     if (argc != 2)
     {
-        throw std::invalid_argument("usage: ./_cyclicPerturbationFast.out <maxTime>");
+        throw std::invalid_argument("usage: ./build/bin/spectralFunctionKrylov.exe <maxTime>");
     }
 
     std::ifstream dataFile("_params.json");

@@ -517,11 +517,11 @@ def connected_symmetrized_spectral_function(
 
 if __name__ == "__main__":
 
-    N = 14
+    N = 10
 
     J = 1.0
     hx = 1.05
-    hz = 0.5
+    hz = 0.0
 
     beta = 0.01
 
@@ -531,7 +531,7 @@ if __name__ == "__main__":
         hx=hx,
         hz=hz,
         beta=beta,
-        eta=0.005,
+        eta=0.2,
         n_omega=4001,
         omega_max=None,
         drop_diagonal_delta=True,

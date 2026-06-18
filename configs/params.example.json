@@ -1,0 +1,14 @@
+{
+    "saveFolder": "./data/",
+    "hbar": 1.0,
+    "N": 12,
+    "J": 1.0,
+    "hx": 1.05,
+    "hz": 0.0,
+    "dt": 0.01,
+    "beta": 0.01,
+    "averages": 100,
+    "seed": 1,
+    "krylovDim": 5,
+    "dataPoints": 1000
+}

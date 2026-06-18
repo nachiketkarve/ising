@@ -1,36 +1,53 @@
-all: ising cyclicPerturbation cyclicPerturbationFast cyclicPerturbationKrylov cyclicPerturbationKrylov2 cyclicPerturbationTest test spectralFunctionKrylov spectralFunctionKrylov2
+CXX ?= g++
+CXXFLAGS ?= -O3 -fopenmp -std=c++17
+CPPFLAGS ?= -I./include -I./../Libraries/eigen -I./../Libraries/json/include
+LDFLAGS ?= -fopenmp
 
-ising: src/ising.cpp
-	g++ -c ./src/ising.cpp -fopenmp -o ./lib/ising.o -O3 -I./include -I./../Libraries/eigen
+SRC_DIR := src
+OBJ_DIR := build/obj
+BIN_DIR := build/bin
 
-cyclicPerturbation: src/cyclicPerturbation.cpp
-	g++ -c ./src/cyclicPerturbation.cpp -fopenmp -o ./lib/cyclicPerturbation.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _cyclicPerturbation.out -fopenmp -O3 ./lib/cyclicPerturbation.o ./lib/ising.o
+ifeq ($(OS),Windows_NT)
+	EXE_EXT ?= .exe
+	MKDIR_BUILD = cmd /C "if not exist build mkdir build"
+	MKDIR_OBJ = cmd /C "if not exist build\obj mkdir build\obj"
+	MKDIR_BIN = cmd /C "if not exist build\bin mkdir build\bin"
+	RM_BUILD = cmd /C "if exist build rmdir /S /Q build"
+else
+	EXE_EXT ?=
+	MKDIR_BUILD = mkdir -p build
+	MKDIR_OBJ = mkdir -p $(OBJ_DIR)
+	MKDIR_BIN = mkdir -p $(BIN_DIR)
+	RM_BUILD = rm -rf build
+endif
 
-cyclicPerturbationFast: src/cyclicPerturbationFast.cpp
-	g++ -c ./src/cyclicPerturbationFast.cpp -fopenmp -o ./lib/cyclicPerturbationFast.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _cyclicPerturbationFast.out -fopenmp -O3 ./lib/cyclicPerturbationFast.o ./lib/ising.o
+CORE_SRC := $(SRC_DIR)/ising.cpp
+CORE_OBJ := $(OBJ_DIR)/ising.o
 
-cyclicPerturbationKrylov: src/cyclicPerturbationKrylov.cpp
-	g++ -c ./src/cyclicPerturbationKrylov.cpp -fopenmp -o ./lib/cyclicPerturbationKrylov.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _cyclicPerturbationKrylov.out -fopenmp -O3 ./lib/cyclicPerturbationKrylov.o ./lib/ising.o
+PROGRAM_SRCS := $(filter-out $(CORE_SRC),$(wildcard $(SRC_DIR)/*.cpp))
+PROGRAMS := $(basename $(notdir $(PROGRAM_SRCS)))
 
-cyclicPerturbationKrylov2: src/cyclicPerturbationKrylov2.cpp
-	g++ -c ./src/cyclicPerturbationKrylov2.cpp -fopenmp -o ./lib/cyclicPerturbationKrylov2.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _cyclicPerturbationKrylov2.out -fopenmp -O3 ./lib/cyclicPerturbationKrylov2.o ./lib/ising.o
+BINS := $(addprefix $(BIN_DIR)/,$(addsuffix $(EXE_EXT),$(PROGRAMS)))
+OBJS := $(CORE_OBJ) $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(PROGRAMS)))
 
-spectralFunctionKrylov: src/spectralFunctionKrylov.cpp
-	g++ -c ./src/spectralFunctionKrylov.cpp -fopenmp -o ./lib/spectralFunctionKrylov.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _spectralFunctionKrylov.out -fopenmp -O3 ./lib/spectralFunctionKrylov.o ./lib/ising.o
+.PHONY: all clean dirs
+.SECONDARY: $(OBJS)
 
-spectralFunctionKrylov2: src/spectralFunctionKrylov2.cpp
-	g++ -c ./src/spectralFunctionKrylov2.cpp -fopenmp -o ./lib/spectralFunctionKrylov2.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _spectralFunctionKrylov2.out -fopenmp -O3 ./lib/spectralFunctionKrylov2.o ./lib/ising.o
+all: dirs $(BINS)
 
-cyclicPerturbationTest: src/cyclicPerturbationTest.cpp
-	g++ -c ./src/cyclicPerturbationTest.cpp -fopenmp -o ./lib/cyclicPerturbationTest.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _cyclicPerturbationTest.out -fopenmp -O3 ./lib/cyclicPerturbationTest.o ./lib/ising.o
+dirs:
+	$(MKDIR_BUILD)
+	$(MKDIR_OBJ)
+	$(MKDIR_BIN)
 
-test: src/test.cpp
-	g++ -c ./src/test.cpp -fopenmp -o ./lib/test.o -O3 -I./include -I./../Libraries/eigen -I./../Libraries/json/include
-	g++ -o _test.out -fopenmp -O3 ./lib/test.o ./lib/ising.o
+$(CORE_OBJ): $(CORE_SRC) include/ising.hpp include/eigenClasses.hpp | dirs
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp include/ising.hpp include/eigenClasses.hpp | dirs
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+
+$(BIN_DIR)/%$(EXE_EXT): $(OBJ_DIR)/%.o $(CORE_OBJ) | dirs
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) $^ -o $@
+
+clean:
+	$(RM_BUILD)

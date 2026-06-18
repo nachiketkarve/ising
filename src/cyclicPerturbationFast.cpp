@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
     if (argc != 3)
     {
-        throw std::invalid_argument("usage: ./_cyclicPerturbationFast.out <maxTime> <lambda>");
+        throw std::invalid_argument("usage: ./build/bin/cyclicPerturbationFast.exe <maxTime> <lambda>");
     }
 
     std::ifstream dataFile("_params.json");
